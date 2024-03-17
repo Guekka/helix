@@ -43,6 +43,7 @@ async fn main_impl() -> Result<i32> {
 
     helix_loader::initialize_config_file(args.config_file.clone());
     helix_loader::initialize_log_file(args.log_file.clone());
+    helix_core::config::initialize_enable_copilot(args.enable_copilot);
 
     // Help has a higher priority and should be handled separately.
     if args.display_help {

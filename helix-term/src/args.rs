@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Default)]
 pub struct Args {
+    pub enable_copilot: bool,
     pub display_help: bool,
     pub display_version: bool,
     pub health: bool,
@@ -45,6 +46,7 @@ impl Args {
 
         while let Some(arg) = argv.next() {
             match arg.as_str() {
+                "-a" => args.enable_copilot = true,
                 "--" => break, // stop parsing at this point treat the remaining as files
                 "--version" => args.display_version = true,
                 "--help" => args.display_help = true,

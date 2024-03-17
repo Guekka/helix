@@ -47,6 +47,7 @@ pub fn setup(config: Arc<ArcSwap<Config>>) -> Handlers {
         word_index,
         pull_diagnostics,
         pull_all_documents_diagnostics,
+        copilot: None,
     };
 
     helix_view::handlers::register_hooks(&handlers);

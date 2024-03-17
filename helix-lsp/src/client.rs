@@ -1,4 +1,5 @@
 use crate::{
+    copilot_types,
     file_operations::FileOperationsInterest,
     find_lsp_workspace, jsonrpc,
     transport::{Payload, Transport},
@@ -434,14 +435,14 @@ impl Client {
 
     /// Execute a RPC request on the language server.
     fn call<R: lsp::request::Request>(
-        &self,
-        params: R::Params,
-    ) -> impl Future<Output = Result<R::Result>>
-    where
-        R::Params: serde::Serialize,
-    {
-        self.call_with_ref::<R>(&params)
-    }
+    &self,
+    params: R::Params,
+) -> impl Future<Output = Result<R::Result>>
+where
+    R::Params: serde::Serialize,
+{
+    self.call_with_ref::<R>(&params)
+}
 
     fn call_with_ref<R: lsp::request::Request>(
         &self,
@@ -499,67 +500,67 @@ impl Client {
 
     /// Send a RPC notification to the language server.
     pub fn notify<R: lsp::notification::Notification>(&self, params: R::Params)
-    where
-        R::Params: serde::Serialize,
-    {
-        let server_tx = self.server_tx.clone();
+where
+    R::Params: serde::Serialize,
+{
+    let server_tx = self.server_tx.clone();
 
-        let params = match serde_json::to_value(params) {
-            Ok(params) => params,
-            Err(err) => {
-                log::error!(
-                    "Failed to serialize params for notification '{}' for server '{}': {err}",
-                    R::METHOD,
-                    self.name,
-                );
-                return;
-            }
-        };
-
-        let notification = jsonrpc::Notification {
-            jsonrpc: Some(jsonrpc::Version::V2),
-            method: R::METHOD.to_string(),
-            params: Self::value_into_params(params),
-        };
-
-        if let Err(err) = server_tx.send(Payload::Notification(notification)) {
+    let params = match serde_json::to_value(params) {
+        Ok(params) => params,
+        Err(err) => {
             log::error!(
-                "Failed to send notification '{}' to server '{}': {err}",
+                "Failed to serialize params for notification '{}' for server '{}': {err}",
                 R::METHOD,
-                self.name
+                self.name,
             );
+            return;
         }
+    };
+
+    let notification = jsonrpc::Notification {
+        jsonrpc: Some(jsonrpc::Version::V2),
+        method: R::METHOD.to_string(),
+        params: Self::value_into_params(params),
+    };
+
+    if let Err(err) = server_tx.send(Payload::Notification(notification)) {
+        log::error!(
+            "Failed to send notification '{}' to server '{}': {err}",
+            R::METHOD,
+            self.name
+        );
     }
+}
 
     /// Reply to a language server RPC call.
     pub fn reply(
-        &self,
-        id: jsonrpc::Id,
-        result: core::result::Result<Value, jsonrpc::Error>,
-    ) -> Result<()> {
-        use jsonrpc::{Failure, Output, Success, Version};
+    &self,
+    id: jsonrpc::Id,
+    result: core::result::Result<Value, jsonrpc::Error>,
+) -> Result<()> {
+    use jsonrpc::{Failure, Output, Success, Version};
 
-        let server_tx = self.server_tx.clone();
+    let server_tx = self.server_tx.clone();
 
-        let output = match result {
-            Ok(result) => Output::Success(Success {
-                jsonrpc: Some(Version::V2),
-                id,
-                result,
-            }),
-            Err(error) => Output::Failure(Failure {
-                jsonrpc: Some(Version::V2),
-                id,
-                error,
-            }),
-        };
+    let output = match result {
+        Ok(result) => Output::Success(Success {
+            jsonrpc: Some(Version::V2),
+            id,
+            result,
+        }),
+        Err(error) => Output::Failure(Failure {
+            jsonrpc: Some(Version::V2),
+            id,
+            error,
+        }),
+    };
 
-        server_tx
-            .send(Payload::Response(output))
-            .map_err(|e| Error::Other(e.into()))?;
+    server_tx
+        .send(Payload::Response(output))
+        .map_err(|e| Error::Other(e.into()))?;
 
-        Ok(())
-    }
+    Ok(())
+}
 
     // -------------------------------------------------------------------------------------------
     // General messages
@@ -782,19 +783,19 @@ impl Client {
     /// Tries to shut down the language server but returns
     /// early if server responds with an error.
     pub async fn shutdown_and_exit(&self) -> Result<()> {
-        self.shutdown().await?;
-        self.exit();
-        Ok(())
-    }
+    self.shutdown().await?;
+    self.exit();
+    Ok(())
+}
 
     /// Forcefully shuts down the language server ignoring any errors.
     pub async fn force_shutdown(&self) -> Result<()> {
-        if let Err(e) = self.shutdown().await {
-            log::warn!("language server failed to terminate gracefully - {}", e);
-        }
-        self.exit();
-        Ok(())
+    if let Err(e) = self.shutdown().await {
+        log::warn!("language server failed to terminate gracefully - {}", e);
     }
+    self.exit();
+    Ok(())
+}
 
     // -------------------------------------------------------------------------------------------
     // Workspace
@@ -1760,6 +1761,18 @@ impl Client {
         Some(self.call::<lsp::request::Rename>(params))
     }
 
+    pub fn copilot_completion(
+        &self,
+        document: copilot_types::Document,
+    ) -> impl Future<Output = Result<Option<copilot_types::CompletionResponse>>> {
+        let params = copilot_types::CompletionRequestParams { doc: document };
+        let request = self.call::<copilot_types::CompletionRequest>(params);
+
+        async move {
+            let response = request.await?;
+            Ok(response)
+        }
+    }
     pub fn command(
         &self,
         command: lsp::Command,

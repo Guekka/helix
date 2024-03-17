@@ -11,7 +11,7 @@ use crate::{
 use helix_core::{
     char_idx_at_visual_offset,
     doc_formatter::TextFormat,
-    text_annotations::TextAnnotations,
+    text_annotations::{CopilotLineAnnotation, TextAnnotations},
     visual_offset_from_anchor, visual_offset_from_block, Position, RopeSlice, Selection,
     Transaction,
     VisualOffsetError::{PosAfterMaxRow, PosBeforeAnchorRow},
@@ -525,6 +525,13 @@ impl View {
                 width,
                 doc.view_offset(self.id).horizontal_offset,
                 config,
+            ));
+        }
+
+        if let Some(completion) = doc.get_copilot_completion_for_rendering() {
+            text_annotations.add_line_annotation(CopilotLineAnnotation::new(
+                completion.display_coords,
+                completion.additional_softwrap,
             ));
         }
 

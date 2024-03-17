@@ -422,3 +422,32 @@ impl<'a> TextAnnotations<'a> {
         virt_off.row
     }
 }
+
+pub struct CopilotLineAnnotation {
+    doc_line: usize,
+    softwrap: usize,
+}
+
+impl CopilotLineAnnotation {
+    pub fn new(display_pos: Position, softwrap: usize) -> Box<Self> {
+        Box::new(CopilotLineAnnotation {
+            doc_line: display_pos.row,
+            softwrap,
+        })
+    }
+}
+
+impl LineAnnotation for CopilotLineAnnotation {
+    fn insert_virtual_lines(
+        &mut self,
+        _line_end_char_idx: usize,
+        _vertical_off: Position,
+        _doc_line: usize,
+    ) -> Position {
+        if self.doc_line != _doc_line {
+            return Position::new(0, 0);
+        }
+        self.doc_line = usize::MAX;
+        return Position::new(self.softwrap, 0);
+    }
+}

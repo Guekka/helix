@@ -1359,10 +1359,11 @@ impl Application {
         }
 
         if self.editor.close_language_servers(None).await.is_err() {
-            log::error!("Timed out waiting for language servers to shutdown");
-            errs.push(anyhow::format_err!(
-                "Timed out waiting for language servers to shutdown"
-            ));
+            // this often happens with copilot, let's disable it for now
+            // log::error!("Timed out waiting for language servers to shutdown");
+            // errs.push(anyhow::format_err!(
+            //     "Timed out waiting for language servers to shutdown"
+            // ));
         }
 
         errs

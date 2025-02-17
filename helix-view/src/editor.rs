@@ -2364,7 +2364,7 @@ impl Editor {
         }
 
         tokio::time::timeout(
-            Duration::from_millis(timeout.unwrap_or(3000)),
+            Duration::from_millis(timeout.unwrap_or(500)),
             future::join_all(
                 self.language_servers
                     .iter_clients()

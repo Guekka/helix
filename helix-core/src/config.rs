@@ -1,8 +1,12 @@
+
+
 use crate::syntax::{
     config::{Configuration, LanguageConfiguration, LanguageServerFeatures},
     Loader, LoaderError,
 };
 use std::collections::HashSet;
+use helix_loader::VERSION_AND_GIT_HASH;
+use serde_json::json;
 
 static ENABLE_COPILOT: once_cell::sync::OnceCell<bool> = once_cell::sync::OnceCell::new();
 
@@ -81,6 +85,21 @@ fn append_copilot_lsp_to_language_configs(config: &mut Configuration) {
         only: HashSet::new(),
         excluded: HashSet::new(),
     };
+
+    let copilot_config = config.language_server.get_mut("copilot").expect("Could not find copilot config in languages.toml");
+    copilot_config.config  = Some(json![
+        {
+            "editorInfo" : {
+                "name": "helix",
+                "version": VERSION_AND_GIT_HASH.to_string(),
+            },
+            "editorPluginInfo": {
+                "name": "helix-copilot",
+                "version": VERSION_AND_GIT_HASH.to_string(),
+            },
+        }
+    ]);
+
     for lan_config in config.language.iter_mut() {
         lan_config.language_servers.push(copilot_ls.clone());
     }
